@@ -88,8 +88,8 @@ def load_model_sharded(model, rank, cfg):
 
 def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
-    chk_type = "sync" #async or sync
-    chk_writer = "filesystem" #filesystem or fsspec
+    chk_type = "async" #async or sync
+    chk_writer = "fsspec" #filesystem or fsspec
     folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
