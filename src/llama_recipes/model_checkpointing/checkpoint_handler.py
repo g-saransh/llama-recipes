@@ -20,6 +20,10 @@ from torch.distributed._shard.checkpoint import (
     save_state_dict,
     load_state_dict,
 )
+from torch.distributed.checkpoint._fsspec_filesystem import (
+    FsspecWriter,
+    FsspecReader,
+)
 from torch.distributed.checkpoint.default_planner import (
     DefaultSavePlanner,
     DefaultLoadPlanner,
@@ -82,10 +86,10 @@ def load_model_sharded(model, rank, cfg):
     if rank == 0:
         print(f"Sharded state checkpoint loaded from {load_dir}")
 
-
 def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
-    
+    chk_type = "sync" #async or sync
+    chk_writer = "filesystem" #filesystem or fsspec
     folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
@@ -101,6 +105,28 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
     distributed_writer = dist_cp.FileSystemWriter(
         save_dir,
     )
+
+#    # Only create temp_dir when rank is 0
+#    if rank == 0:
+#        temp_dir = tempfile.mkdtemp()
+#        print(f"Using temp directory: {temp_dir}")
+#    else:
+#        temp_dir = ""
+#    object_list = [temp_dir]
+#
+#    # Broadcast temp_dir to all the other ranks
+#    dist.broadcast_object_list(object_list)
+#    global_temp_dir = object_list[0]
+#
+#    fsspec_save_path = global_temp_dir
+#    fsspec_writer = FsspecWriter(
+#        fsspec_save_path
+#    )
+
+    fsspec_save_path = str(save_dir)
+    fsspec_writer = FsspecWriter(
+        fsspec_save_path
+    )
     t0 = time.perf_counter()
 
     with FSDP.state_dict_type(model, StateDictType.SHARDED_STATE_DICT):
@@ -108,13 +134,54 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
         state_dict = {"model": model.state_dict()}
         if optim is not None:
             state_dict["optim"] = FSDP.optim_state_dict(model, optim)
+            print(f"adding optim to state_dict")
+        
+        if (chk_writer == "fsspec"):
+            print(f"Using fsspec_writer")
+            str_writer = fsspec_writer
+        else:
+            print(f"Using distributed_writer")
+            str_writer = distributed_writer
 
-        dist_cp.save_state_dict(
-            state_dict=state_dict,
-            storage_writer=distributed_writer,
-            planner=DefaultSavePlanner(),
-            
-        )
+#            if (chk_type == "async"):
+#                print(f"Doing async checkpointing with fsspec writer to {fsspec_save_path}")
+#                f = dist_cp.state_dict_saver._async_save(
+#                        state_dict=state_dict,
+#                        #checkpoint_id=save_dir
+#                        storage_writer=fsspec_writer,
+#                        planner=DefaultSavePlanner(),
+#                    
+#                    )
+#            else:    
+#                print(f"Doing default checkpointing with fsspec writer to {fsspec_save_path}")
+#                f = dist_cp.save_state_dict(
+#                        state_dict=state_dict,
+#                        #checkpoint_id=save_dir
+#                        storage_writer=fsspec_writer,
+#                        planner=DefaultSavePlanner(),
+#                    
+#                    )
+##        t = time.monotonic()
+##        while not f.done():
+##            time.sleep(1)
+##            print(f"still waiting... {time.monotonic() - t}")
+##        f.result()
+        if (chk_type == "async"):
+            print(f"Doing async checkpointing to {save_dir}")
+            dist_cp.state_dict_saver._async_save(
+                state_dict=state_dict,
+                storage_writer=str_writer,
+                planner=DefaultSavePlanner(),
+                
+            )
+        else:
+            print(f"Doing sync checkpointing to {save_dir}")
+            dist_cp.save_state_dict(
+                state_dict=state_dict,
+                storage_writer=str_writer,
+                planner=DefaultSavePlanner(),
+                
+            )
     dist.barrier()
     t1 = time.perf_counter()
     if rank == 0:

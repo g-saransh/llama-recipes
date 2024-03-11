@@ -174,6 +174,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                 val_step_loss.extend(temp_val_loss)
                 val_step_perplexity.extend(temp_step_perplexity)
 
+            print(f"-----starting checkpointing-----")
             checkpoint_start_time = time.perf_counter()
             if train_config.save_model and eval_epoch_loss < best_val_loss:
                 if train_config.enable_fsdp:
@@ -194,27 +195,33 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                 else:
                     if not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.FULL_STATE_DICT:
 
+                        print(f"-----save_model_checkpoint-----")
                         save_model_checkpoint(
                             model, optimizer, rank, train_config, epoch=epoch
                         )
                     elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
                         print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
                         print("=====================================================")
+                        print("1=====1")
 
                         save_model_and_optimizer_sharded(model, rank, train_config)
                         if train_config.save_optimizer:
+                            print("2=====2")
                             save_model_and_optimizer_sharded(model, rank, train_config, optim=optimizer)
                             print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
                             print("=====================================================")
 
                     if not train_config.use_peft and  train_config.save_optimizer:
+                        print(f"-----save_optimizer_checkpoint-----")
                         save_optimizer_checkpoint(
                             model, optimizer, rank, train_config, epoch=epoch
                         )
                         print(" Saving the FSDP model checkpoints and optimizer using FULL_STATE_DICT")
                         print("=====================================================")
                 if train_config.enable_fsdp:
+                    print(f"Starting dist.barrier()")
                     dist.barrier()
+                    print(f"Done with dist.barrier()")
             checkpoint_end_time = time.perf_counter() - checkpoint_start_time
             checkpoint_times.append(checkpoint_end_time)
             if eval_epoch_loss < best_val_loss:
@@ -351,7 +358,8 @@ def setup():
         # distributed training on xpus
         dist.init_process_group("ccl")
     else:
-        dist.init_process_group("nccl")
+        #dist.init_process_group("nccl")
+        dist.init_process_group()
 
 
 def setup_environ_flags(rank):
