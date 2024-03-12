@@ -106,7 +106,7 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
         path=save_dir,
 	thread_count=8,
 	single_file_per_rank=False,
-	sync_file=False
+	sync_files=False
     )
 
 #    # Only create temp_dir when rank is 0
@@ -131,7 +131,7 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
         path=fsspec_save_path,
 	thread_count=8,
 	single_file_per_rank=False,
-	sync_file=False
+	sync_files=False
     )
     t0 = time.perf_counter()
 
