@@ -174,7 +174,7 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
 ##        f.result()
         if (chk_type == "async"):
             print(f"Doing async checkpointing to {save_dir}")
-            dist_cp.state_dict_saver._async_save(
+            dist_cp.state_dict_saver.async_save(
                 state_dict=state_dict,
                 storage_writer=str_writer,
                 planner=DefaultSavePlanner(),
