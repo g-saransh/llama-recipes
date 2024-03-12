@@ -90,6 +90,7 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
     chk_type = "async" #async or sync
     chk_writer = "fsspec" #filesystem or fsspec
+    log_writeout = True
     folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
@@ -174,12 +175,23 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
 ##        f.result()
         if (chk_type == "async"):
             print(f"Doing async checkpointing to {save_dir}")
-            dist_cp.state_dict_saver.async_save(
+            t_m = time.perf_counter()
+            f = dist_cp.state_dict_saver.async_save(
                 state_dict=state_dict,
                 storage_writer=str_writer,
                 planner=DefaultSavePlanner(),
                 
             )
+            print(f"Checkpoint memory copy time (rank {rank})... {time.perf_counter() - t_m}")
+            
+            if (log_writeout):
+                t_w = time.perf_counter()
+                while not f.done():
+                    time.sleep(1)
+                    if rank == 0:
+                        print(f"still waiting... {time.perf_counter() - t_w}")
+                print(f"Checkpoint writeout time (rank {rank})... {time.perf_counter() - t_w}")
+
         else:
             print(f"Doing sync checkpointing to {save_dir}")
             dist_cp.save_state_dict(
