@@ -204,7 +204,8 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
                     rank,
                     epoch,
                 )
-                f.add_done_callback(lambda f: executor.shutdown(wait=False))
+                # f.add_done_callback(lambda f: executor.shutdown(wait=False))
+                executor.shutdown(wait=False)
 
         else:
             print(f"Doing sync checkpointing to {save_dir}")
