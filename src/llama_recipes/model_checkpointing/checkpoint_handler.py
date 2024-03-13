@@ -201,7 +201,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             if (log_writeout):
                 executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(
-                    profile_async_writeout(f, rank, epoch),
+                    profile_async_writeout,
                     f,
                     rank,
                     epoch,
@@ -323,8 +323,28 @@ def save_optimizer_checkpoint(model, optimizer, rank, cfg, epoch=1):
         opt_save_full_path = save_dir / opt_save_name
 
         print(f"--> saving optimizer state...")
+        fsspec_save_path = str(opt_save_full_path)
+        fsspec_writer = FsspecWriter(
+            path=fsspec_save_path,
+            thread_count=8,
+            single_file_per_rank=False,
+            sync_files=False
+        )
         t_save = time.perf_counter()
-        torch.save(optim_state, opt_save_full_path)
+        # torch.save(optim_state, opt_save_full_path)
+        f = dist_cp.state_dict_saver.async_save(
+            state_dict=optim_state,
+            storage_writer=fsspec_writer,
+            planner=DefaultSavePlanner(),      
+        )
+        executor = ThreadPoolExecutor(max_workers=1)
+        executor.submit(
+            profile_async_writeout,
+            f,
+            rank,
+            epoch,
+        )
+        executor.shutdown(wait=False)
         print(f"kinesis: Time to save optim state (rank {rank})... {time.perf_counter()-t_save}")
 
         print(f"--> saved {opt_save_full_path} to disk")
