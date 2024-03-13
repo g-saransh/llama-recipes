@@ -51,12 +51,13 @@ fullstate_save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True
 
 def load_model_sharded(model, rank, cfg):
     # torch.manual_seed(103)
+    model_basename = Path(cfg.model_name).name
     folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
         + cfg.dist_checkpoint_folder
         + "-"
-        + cfg.model_name
+        + model_basename
     )
 
     load_dir = Path.cwd() / folder_name
@@ -100,12 +101,13 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
     chk_type = "async" #async or sync
     chk_writer = "fsspec" #filesystem or fsspec
     log_writeout = True
+    model_basename = Path(cfg.model_name).name
     folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
         + cfg.dist_checkpoint_folder
         + "-"
-        + cfg.model_name
+        + model_basename
     )
 
     save_dir = Path.cwd() / folder_name
@@ -242,16 +244,17 @@ def save_model_checkpoint(
     if rank == 0:
         print(f"--> saving model ...")
         # create save path
+        model_basename = Path(cfg.model_name).name
         folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
         + cfg.dist_checkpoint_folder
         + "-"
-        + cfg.model_name
+        + model_basename
         )
         save_dir = Path.cwd() / folder_name
         save_dir.mkdir(parents=True, exist_ok=True)
-        save_name = cfg.model_name + "-" + str(epoch) + ".pt"
+        save_name = model_basename + "-" + str(epoch) + ".pt"
         save_full_path = str(save_dir) + "/" + save_name
 
         # save model
@@ -303,18 +306,19 @@ def save_optimizer_checkpoint(model, optimizer, rank, cfg, epoch=1):
     print(f"optim state dict ready on {rank} and len of {len(optim_state)}\n")
 
     if rank == 0:
+        model_basename = Path(cfg.model_name).name
         folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
         + cfg.dist_checkpoint_folder
         + "-"
-        + cfg.model_name
+        + model_basename
         )
         save_dir = Path.cwd() / folder_name
         save_dir.mkdir(parents=True, exist_ok=True)
 
         opt_save_name = (
-            "optimizer" + "-" + cfg.model_name + "-" + str(epoch) + ".pt"
+            "optimizer" + "-" + model_basename + "-" + str(epoch) + ".pt"
         )
         opt_save_full_path = save_dir / opt_save_name
 
