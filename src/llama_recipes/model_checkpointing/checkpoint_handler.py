@@ -200,7 +200,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             
             if (log_writeout):
                 executor = ThreadPoolExecutor(max_workers=1)
-                f = executor.submit(
+                executor.submit(
                     profile_async_writeout(f, rank, epoch),
                     f,
                     rank,
