@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 import torch
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
@@ -86,7 +87,15 @@ def load_model_sharded(model, rank, cfg):
     if rank == 0:
         print(f"Sharded state checkpoint loaded from {load_dir}")
 
-def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
+def profile_async_writeout(f, rank, epoch):
+    t_w = time.perf_counter()
+    while not f.done():
+        time.sleep(1)
+        # if rank == 0:
+        #     print(f"still waiting... {time.perf_counter() - t_w}")
+    print(f"kinesis: Checkpoint writeout time (rank {rank}, epoch {epoch})... {time.perf_counter() - t_w}")
+
+def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
     chk_type = "async" #async or sync
     chk_writer = "fsspec" #filesystem or fsspec
@@ -138,9 +147,9 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
 
     with FSDP.state_dict_type(model, StateDictType.SHARDED_STATE_DICT):
         
-        state_dict = {"model": model.state_dict()}
         t_state = time.perf_counter()
-        print(f"Checkpoint state_dict creation time = {t_state-t0:.4f}")
+        state_dict = {"model": model.state_dict()}
+        print(f"kinesis: Checkpoint state_dict creation time (rank {rank})... {time.perf_counter()-t_state}")
         
         if optim is not None:
             state_dict["optim"] = FSDP.optim_state_dict(model, optim)
@@ -185,15 +194,17 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
                 planner=DefaultSavePlanner(),
                 
             )
-            print(f"Checkpoint memory copy time (rank {rank})... {time.perf_counter() - t_m}")
+            print(f"kinesis: Checkpoint memory copy time (rank {rank})... {time.perf_counter() - t_m}")
             
             if (log_writeout):
-                t_w = time.perf_counter()
-                while not f.done():
-                    time.sleep(1)
-                    if rank == 0:
-                        print(f"still waiting... {time.perf_counter() - t_w}")
-                print(f"Checkpoint writeout time (rank {rank})... {time.perf_counter() - t_w}")
+                executor = ThreadPoolExecutor(max_workers=1)
+                f = executor.submit(
+                    profile_async_writeout(f, rank, epoch),
+                    f,
+                    rank,
+                    epoch,
+                )
+                f.add_done_callback(lambda f: executor.shutdown(wait=False))
 
         else:
             print(f"Doing sync checkpointing to {save_dir}")
@@ -206,10 +217,10 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
     t_b = time.perf_counter()
     dist.barrier()
     t1 = time.perf_counter()
-    print(f"Checkpoint barrier time = {t1-t_b:.4f}")
+    print(f"kinesis: Checkpoint barrier time = {t1-t_b:.4f}")
     if rank == 0:
         print(f"Sharded state checkpoint saved to {save_dir}")
-        print(f"Checkpoint Time = {t1-t0:.4f}")
+        print(f"kinesis: Checkpoint Time = {t1-t0:.4f}")
 def save_model_checkpoint(
     model,
     optimizer,
@@ -280,13 +291,13 @@ def load_model_checkpoint(model, rank, cfg):
 def save_optimizer_checkpoint(model, optimizer, rank, cfg, epoch=1):
     """save optimizer state via full state dict"""
 
-   
+    t0 = time.perf_counter()
     print(f"--> optim state call on rank {rank}\n")
 
     # pull all sharded optimizer states to rank0 cpu...
 
     optim_state = FSDP.full_optim_state_dict(model, optimizer)
-
+    print(f"kinesis: Optim state dict creation time (rank {rank})... {time.perf_counter()-t0}")
     
     print(f"optim state dict ready on {rank} and len of {len(optim_state)}\n")
 
@@ -307,10 +318,12 @@ def save_optimizer_checkpoint(model, optimizer, rank, cfg, epoch=1):
         opt_save_full_path = save_dir / opt_save_name
 
         print(f"--> saving optimizer state...")
-
+        t_save = time.perf_counter()
         torch.save(optim_state, opt_save_full_path)
+        print(f"kinesis: Time to save optim state (rank {rank})... {time.perf_counter()-t_save}")
 
         print(f"--> saved {opt_save_full_path} to disk")
+        print(f"kinesis: Time for save_optimizer_checkpoint (rank {rank})... {time.perf_counter()-t0}")
 
 
 def load_optimizer_checkpoint(model, optimizer_checkpoint_path, rank):

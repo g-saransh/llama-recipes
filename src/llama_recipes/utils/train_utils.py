@@ -203,11 +203,11 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                         )
                     elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
                         if train_config.save_optimizer:
-                            save_model_and_optimizer_sharded(model, rank, train_config, optim=optimizer)
+                            save_model_and_optimizer_sharded((epoch + 1), model, rank, train_config, optim=optimizer)
                             print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
                         else:
                             print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
-                            save_model_and_optimizer_sharded(model, rank, train_config)
+                            save_model_and_optimizer_sharded((epoch +1), model, rank, train_config)
 
                     if not train_config.use_peft and  train_config.save_optimizer:
                         print(f"-----save_optimizer_checkpoint-----")
