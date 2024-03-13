@@ -200,13 +200,13 @@ def save_model_and_optimizer_sharded(model, rank, cfg,optim=None):
                 planner=DefaultSavePlanner(),
                 
             )
+    t_b = time.perf_counter()
     dist.barrier()
     t1 = time.perf_counter()
     if rank == 0:
         print(f"Sharded state checkpoint saved to {save_dir}")
-        print(
-            f"Checkpoint Time = {t1-t0:.4f}\n"
-        )
+        print(f"Checkpoint barrier time = {t1-t_b:.4f}")
+        print(f"Checkpoint Time = {t1-t0:.4f}")
 def save_model_checkpoint(
     model,
     optimizer,
