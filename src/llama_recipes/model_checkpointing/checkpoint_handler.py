@@ -116,9 +116,9 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
 
     distributed_writer = dist_cp.FileSystemWriter(
         path=save_dir,
-	thread_count=8,
-	single_file_per_rank=False,
-	sync_files=False
+        thread_count=2,
+        single_file_per_rank=False,
+        sync_files=False
     )
 
 #    # Only create temp_dir when rank is 0
@@ -141,9 +141,9 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
     fsspec_save_path = str(save_dir)
     fsspec_writer = FsspecWriter(
         path=fsspec_save_path,
-	thread_count=8,
-	single_file_per_rank=False,
-	sync_files=False
+        thread_count=2,
+        single_file_per_rank=False,
+        sync_files=False
     )
     t0 = time.perf_counter()
 
@@ -326,7 +326,7 @@ def save_optimizer_checkpoint(model, optimizer, rank, cfg, epoch=1):
         fsspec_save_path = str(opt_save_full_path)
         fsspec_writer = FsspecWriter(
             path=fsspec_save_path,
-            thread_count=8,
+            thread_count=2,
             single_file_per_rank=False,
             sync_files=False
         )
