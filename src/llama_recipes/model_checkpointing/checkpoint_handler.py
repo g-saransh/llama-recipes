@@ -100,7 +100,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
     chk_type = "async" #async or sync
     chk_writer = "fsspec" #filesystem or fsspec
-    log_writeout = True
+    log_writeout = False
     model_basename = Path(cfg.model_name).name
     folder_name = (
         cfg.dist_checkpoint_root_folder
