@@ -209,13 +209,13 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                             print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
                             save_model_and_optimizer_sharded((epoch +1), model, rank, train_config)
 
-                    if not train_config.use_peft and  train_config.save_optimizer:
-                        print(f"-----save_optimizer_checkpoint-----")
-                        save_optimizer_checkpoint(
-                            model, optimizer, rank, train_config, epoch=epoch
-                        )
-                        print(" Saving the FSDP model checkpoints and optimizer using FULL_STATE_DICT")
-                        print("=====================================================")
+                    # if not train_config.use_peft and  train_config.save_optimizer:
+                    #     print(f"-----save_optimizer_checkpoint-----")
+                    #     save_optimizer_checkpoint(
+                    #         model, optimizer, rank, train_config, epoch=epoch
+                    #     )
+                    #     print(" Saving the FSDP model checkpoints and optimizer using FULL_STATE_DICT")
+                    #     print("=====================================================")
                 if train_config.enable_fsdp:
                     print(f"Starting dist.barrier()")
                     dist.barrier()
