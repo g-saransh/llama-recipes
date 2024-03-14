@@ -151,11 +151,11 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
         
         t_state = time.perf_counter()
         state_dict = {"model": model.state_dict()}
-        print(f"kinesis: Checkpoint state_dict creation time (rank {rank})... {time.perf_counter()-t_state}")
         
         if optim is not None:
             state_dict["optim"] = FSDP.optim_state_dict(model, optim)
             print(f"adding optim to state_dict")
+        print(f"kinesis: Checkpoint state_dict creation time (rank {rank})... {time.perf_counter()-t_state}")
         
         if (chk_writer == "fsspec"):
             print(f"Using fsspec_writer")
