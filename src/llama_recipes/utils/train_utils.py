@@ -203,8 +203,8 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                         )
                     elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
                         if train_config.save_optimizer:
-                            save_model_and_optimizer_sharded((epoch + 1), model, rank, train_config, optim=optimizer)
                             print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
+                            save_model_and_optimizer_sharded((epoch + 1), model, rank, train_config, optim=optimizer)
                         else:
                             print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
                             save_model_and_optimizer_sharded((epoch +1), model, rank, train_config)
@@ -357,7 +357,7 @@ def setup():
         dist.init_process_group("ccl")
     else:
         #dist.init_process_group("nccl")
-        dist.init_process_group()
+        dist.init_process_group("gloo")
 
 
 def setup_environ_flags(rank):
