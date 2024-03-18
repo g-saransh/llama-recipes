@@ -91,16 +91,16 @@ def load_model_sharded(model, rank, cfg):
 def profile_async_writeout(f, rank, epoch):
     t_w = time.perf_counter()
     while not f.done():
-        time.sleep(1)
-        # if rank == 0:
-        #     print(f"still waiting... {time.perf_counter() - t_w}")
+        time.sleep(100)
+        if rank == 0:
+            print(f"still waiting... {time.perf_counter() - t_w}")
     print(f"kinesis: Checkpoint writeout time (rank {rank}, epoch {epoch})... {time.perf_counter() - t_w}")
 
 def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
     chk_type = "async" #async or sync
     chk_writer = "fsspec" #filesystem or fsspec
-    log_writeout = False
+    log_writeout = True
     model_basename = Path(cfg.model_name).name
     folder_name = (
         cfg.dist_checkpoint_root_folder
