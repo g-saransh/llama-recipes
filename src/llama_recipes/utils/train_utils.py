@@ -357,7 +357,8 @@ def setup():
         dist.init_process_group("ccl")
     else:
         #dist.init_process_group("nccl")
-        dist.init_process_group("gloo")
+        #dist.init_process_group("gloo")
+        dist.init_process_group()
 
 
 def setup_environ_flags(rank):
