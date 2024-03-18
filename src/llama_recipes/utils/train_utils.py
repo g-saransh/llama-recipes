@@ -358,7 +358,8 @@ def setup():
     else:
         #dist.init_process_group("nccl")
         #dist.init_process_group("gloo")
-        dist.init_process_group()
+        # dist.init_process_group()
+        dist.init_process_group("cpu:gloo,cuda:nccl")
 
 
 def setup_environ_flags(rank):
