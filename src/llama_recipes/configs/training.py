@@ -41,6 +41,6 @@ class train_config:
     use_wandb: bool = False # Enable wandb for experient tracking
     save_metrics: bool = False # saves training metrics to a json file for later plotting
     chk_typ: str="async" #async or sync
-    chk_write: str="fsspec" #filesystem or fsspec
+    chk_writer: str="fsspec" #filesystem or fsspec
     profile_writeout: bool = True
     profile_writeout_blocking: bool = False
