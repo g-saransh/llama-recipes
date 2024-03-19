@@ -40,3 +40,7 @@ class train_config:
     use_fast_kernels: bool = False # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
     use_wandb: bool = False # Enable wandb for experient tracking
     save_metrics: bool = False # saves training metrics to a json file for later plotting
+    chk_typ: str="async" #async or sync
+    chk_write: str="fsspec" #filesystem or fsspec
+    profile_writeout: bool = True
+    profile_writeout_blocking: bool = False

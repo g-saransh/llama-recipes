@@ -98,15 +98,13 @@ def profile_async_writeout(f, rank, epoch):
 
 def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
-    chk_type = "async" #async or sync
-    chk_writer = "fsspec" #filesystem or fsspec
-    log_writeout = True
+
     model_basename = Path(cfg.model_name).name
     folder_name = (
         cfg.dist_checkpoint_root_folder
         + "/"
         + cfg.dist_checkpoint_folder
-        + "-"
+        + "/"
         + model_basename
     )
 
@@ -157,14 +155,14 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             print(f"adding optim to state_dict")
         print(f"kinesis: Checkpoint state_dict creation time (rank {rank})... {time.perf_counter()-t_state}")
         
-        if (chk_writer == "fsspec"):
+        if (cfg.chk_writer == "fsspec"):
             print(f"Using fsspec_writer")
             str_writer = fsspec_writer
         else:
             print(f"Using distributed_writer")
             str_writer = distributed_writer
 
-#            if (chk_type == "async"):
+#            if (cfg.chk_type == "async"):
 #                print(f"Doing async checkpointing with fsspec writer to {fsspec_save_path}")
 #                f = dist_cp.state_dict_saver._async_save(
 #                        state_dict=state_dict,
@@ -187,7 +185,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
 ##            time.sleep(1)
 ##            print(f"still waiting... {time.monotonic() - t}")
 ##        f.result()
-        if (chk_type == "async"):
+        if (cfg.chk_type == "async"):
             print(f"Doing async checkpointing to {save_dir}")
             t_m = time.perf_counter()
             f = dist_cp.state_dict_saver.async_save(
@@ -198,7 +196,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             )
             print(f"kinesis: Checkpoint memory copy time (rank {rank})... {time.perf_counter() - t_m}")
             
-            if (log_writeout):
+            if (cfg.profile_writeout):
                 executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(
                     profile_async_writeout,
@@ -206,8 +204,8 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
                     rank,
                     epoch,
                 )
-                # f.add_done_callback(lambda f: executor.shutdown(wait=False))
-                executor.shutdown(wait=False)
+                if not cfg.profile_writeout_blocking:
+                    executor.shutdown(wait=False)
 
         else:
             print(f"Doing sync checkpointing to {save_dir}")
