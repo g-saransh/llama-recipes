@@ -207,6 +207,9 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
                 if not cfg.profile_writeout_blocking:
                     print(f"Non-blocking writeout profiling")
                     executor.shutdown(wait=False)
+                else:
+                    print(f"Blocking writeout profiling")
+                    executor.shutdown(wait=True)
 
         else:
             print(f"Doing sync checkpointing to {save_dir}")
