@@ -90,10 +90,12 @@ def load_model_sharded(model, rank, cfg):
 
 def profile_async_writeout(f, rank, epoch):
     t_w = time.perf_counter()
+    t_now = 0
     while not f.done():
-        time.sleep(100)
-        if rank == 0:
-            print(f"still waiting... {time.perf_counter() - t_w}")
+        time.sleep(1)
+        t_now += 1
+        if rank == 0 & ((t_now % 100) == 0):
+            print(f"still waiting... {t_now}")
     print(f"kinesis: Checkpoint writeout time (rank {rank}, epoch {epoch})... {time.perf_counter() - t_w}")
 
 def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
