@@ -192,6 +192,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             t_m = time.perf_counter()
             f = dist_cp.state_dict_saver.async_save(
                 state_dict=state_dict,
+                checkpoint_id=fsspec_save_path,
                 storage_writer=str_writer,
                 planner=DefaultSavePlanner(),
                 
