@@ -218,8 +218,8 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                     #     print("=====================================================")
                 if train_config.enable_fsdp:
                     print(f"Starting dist.barrier()")
-                    #dist.barrier()
-                    print(f"dummy barrier")
+                    dist.barrier()
+                    # print(f"dummy barrier")
                     print(f"Done with dist.barrier()")
             checkpoint_end_time = time.perf_counter() - checkpoint_start_time
             checkpoint_times.append(checkpoint_end_time)
