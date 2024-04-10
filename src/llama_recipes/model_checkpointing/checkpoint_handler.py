@@ -225,7 +225,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
                 
             )
     # t_b = time.perf_counter()
-    # dist.barrier()
+    dist.barrier()
 
     t1 = time.perf_counter()
     # print(f"kinesis: Checkpoint barrier time = {t1-t_b:.4f}")
