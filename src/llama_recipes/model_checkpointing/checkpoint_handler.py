@@ -193,7 +193,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             t_m = time.perf_counter()
             f = dist_cp.state_dict_saver.async_save(
                 state_dict=state_dict,
-                checkpoint_id=fsspec_save_path,
+                # checkpoint_id=fsspec_save_path,
                 storage_writer=str_writer,
                 planner=DefaultSavePlanner(),
                 
@@ -226,7 +226,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
             )
     # t_b = time.perf_counter()
     # dist.barrier()
-    
+
     t1 = time.perf_counter()
     # print(f"kinesis: Checkpoint barrier time = {t1-t_b:.4f}")
     if rank == 0:
