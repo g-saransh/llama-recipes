@@ -99,7 +99,7 @@ def profile_async_writeout(f, rank, epoch):
     print(f"kinesis: Checkpoint writeout time (rank {rank}, epoch {epoch})... {time.perf_counter() - t_w}")
     print(f.result())
 
-def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
+def save_model_and_optimizer_sharded(epoch, model, rank, cfg, optim=None, group=None):
     """save model and optimizer via sharded_state_dict to save_dir"""
 
     model_basename = Path(cfg.model_name).name
@@ -196,7 +196,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg,optim=None):
                 # checkpoint_id=fsspec_save_path,
                 storage_writer=str_writer,
                 planner=DefaultSavePlanner(),
-                
+                process_group=group
             )
             print(f"kinesis: Checkpoint memory copy time (rank {rank})... {time.perf_counter() - t_m}")
             

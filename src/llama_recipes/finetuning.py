@@ -79,11 +79,13 @@ def main(**kwargs):
     random.seed(train_config.seed)
 
     if train_config.enable_fsdp:
-        setup()
         # torchrun specific
         local_rank = int(os.environ["LOCAL_RANK"])
         rank = int(os.environ["RANK"])
         world_size = int(os.environ["WORLD_SIZE"])
+        print(f"local_rank: {local_rank}, rank: {rank}, world_size: {world_size}")
+        setup(rank, world_size)
+        group = torch.distributed.new_group(ranks=list(range(torch.distributed.get_world_size())), backend="gloo")
 
     if torch.distributed.is_initialized():
         if is_xpu_available():
@@ -277,6 +279,7 @@ def main(**kwargs):
         fsdp_config if train_config.enable_fsdp else None,
         local_rank if train_config.enable_fsdp else None,
         rank if train_config.enable_fsdp else None,
+        group if train_config.enable_fsdp else None,
         wandb_run,
     )
     if not train_config.enable_fsdp or rank==0:

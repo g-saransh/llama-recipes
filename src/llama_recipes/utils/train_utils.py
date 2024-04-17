@@ -33,7 +33,7 @@ def set_tokenizer_params(tokenizer: LlamaTokenizer):
 def byte2mb(x):
     return int(x / 2**20)
 
-def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_scheduler, gradient_accumulation_steps, train_config, fsdp_config=None, local_rank=None, rank=None, wandb_run=None):
+def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_scheduler, gradient_accumulation_steps, train_config, fsdp_config=None, local_rank=None, rank=None, group=None, wandb_run=None):
     """
     Trains the model on the given dataloader
 
@@ -204,10 +204,10 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                     elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
                         if train_config.save_optimizer:
                             print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
-                            save_model_and_optimizer_sharded((epoch + 1), model, rank, train_config, optim=optimizer)
+                            save_model_and_optimizer_sharded((epoch + 1), model, rank, train_config, optim=optimizer, group=group)
                         else:
                             print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
-                            save_model_and_optimizer_sharded((epoch +1), model, rank, train_config)
+                            save_model_and_optimizer_sharded((epoch +1), model, rank, train_config, group=group)
 
                     # if not train_config.use_peft and  train_config.save_optimizer:
                     #     print(f"-----save_optimizer_checkpoint-----")
@@ -351,16 +351,16 @@ def check_frozen_layers_peft_model(model):
                 print(f"Layer {i}, parameter {name}: requires_grad = {param.requires_grad}")
 
 
-def setup():
+def setup(rank, world_size):
     """Initialize the process group for distributed training"""
     if is_ccl_available():
         # distributed training on xpus
-        dist.init_process_group("ccl")
+        dist.init_process_group("ccl", rank=rank, world_size=world_size)
     else:
         #dist.init_process_group("nccl")
         #dist.init_process_group("gloo")
         # dist.init_process_group()
-        dist.init_process_group("cpu:gloo,cuda:nccl")
+        dist.init_process_group("cpu:gloo,cuda:nccl", rank=rank, world_size=world_size)
 
 
 def setup_environ_flags(rank):
