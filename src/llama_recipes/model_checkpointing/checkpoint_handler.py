@@ -142,7 +142,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg, optim=None, group=
     fsspec_save_path = str(save_dir)
     fsspec_writer = FsspecWriter(
         path=fsspec_save_path,
-        thread_count=8,
+        thread_count=1,
         single_file_per_rank=False,
         sync_files=False
     )
