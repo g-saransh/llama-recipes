@@ -143,7 +143,7 @@ def save_model_and_optimizer_sharded(epoch, model, rank, cfg, optim=None, group=
     fsspec_writer = FsspecWriter(
         path=fsspec_save_path,
         thread_count=1,
-        single_file_per_rank=False,
+        single_file_per_rank=True,
         sync_files=False
     )
     t0 = time.perf_counter()
