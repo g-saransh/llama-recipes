@@ -44,3 +44,4 @@ class train_config:
     chk_writer: str="fsspec" #filesystem or fsspec
     profile_writeout: bool = True
     profile_writeout_blocking: bool = False
+    random_init: bool=False

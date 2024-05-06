@@ -129,6 +129,11 @@ def main(**kwargs):
             with torch.device("meta"):
                 model = LlamaForCausalLM(llama_config)
 
+    elif train_config.enable_fsdp and train_config.random_init:
+        llama_config = LlamaConfig.from_pretrained(train_config.model_name)
+        llama_config.use_cache = use_cache
+        model = LlamaForCausalLM(llama_config)
+        
     else:
         model = LlamaForCausalLM.from_pretrained(
             train_config.model_name,
@@ -189,9 +194,9 @@ def main(**kwargs):
             device_mesh=hsdp_device_mesh,
             device_id=device_id,
             limit_all_gathers=True,
-            sync_module_states=train_config.low_cpu_fsdp,
+            sync_module_states=train_config.low_cpu_fsdp or train_config.random_init,
             param_init_fn=lambda module: module.to_empty(device=torch.device("cuda"), recurse=False)
-            if train_config.low_cpu_fsdp and rank != 0 else None,
+            if (train_config.low_cpu_fsdp and rank != 0) or train_config.random_init else None,
         )
         if fsdp_config.fsdp_activation_checkpointing:
             apply_fsdp_checkpointing(model)
